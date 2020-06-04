@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="UTF-8">
+      <title>Control panel</title>
+      
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="styles.css">
+      <script>
+        
+      	window.onload = function() {
+      	  var ledOn = document.getElementById("ledOn");
+      	  var ledOff = document.getElementById("ledOff");
+          var switcht = document.getElementById("switcht");
+          var currentt = document.getElementById("currentt");
+          var ws = new WebSocket("ws://" + "%IP%" + "/ws");
+
+       getJsonInfo();
+
+          ws.onopen = function() {
+            //window.alert("Connected");
+           };
+       
+          ws.onmessage = function(evt) {
+            if (evt.data.indexOf("ON") > -1 || evt.data.indexOf("OFF") > -1){
+            	document.getElementById("states").innerHTML  =  evt.data;
+            } else if (evt.data.indexOf("Switch time: ") > -1){
+             	      	document.getElementById("switch_Time").innerHTML  =  evt.data;
+                    } else if (evt.data.indexOf("Current time: ") > -1){
+                   	      	document.getElementById("current_Time").innerHTML  =  evt.data;
+                            };         
+          };
+
+        	ledOn.onclick = function(e){
+            setLedStateOnOff(1);
+        	};
+
+      	  ledOff.onclick = function(e){
+            setLedStateOnOff(0);
+      	  };
+
+          switcht.onclick = function(e){
+            setSwitchTime();
+          };
+          currentt.onclick = function(e){
+            setCurrentTime();
+          };
+      	};	
+
+        function setLedStateOnOff(state) {
+            var data = new FormData();
+            data.append("LedON", state);
+
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function() {
+              if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                  console.log('responseText:' + xmlhttp.responseText);
+                  try {
+                      parseJsonResponse(xmlhttp.responseText);
+                  } catch(err) {
+                      //console.log(err.message + " in " + xmlhttp.responseText);
+                      return;
+                  } 
+              }
+            };
+            xmlhttp.open("POST", "http://%IP%/index", true);
+            xmlhttp.send(data);
+          };
+
+          function setSwitchTime(){
+            var messageField = document.getElementById("time");
+                    var message = messageField.value;
+          //      window.alert(message);
+
+            var data = new FormData();
+            data.append("SwitchTime", message);
+
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function() {
+              if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                  console.log('responseText:' + xmlhttp.responseText);
+                  try {
+                      parseJsonResponse(xmlhttp.responseText);
+                  } catch(err) {
+                      //console.log(err.message + " in " + xmlhttp.responseText);
+                      return;
+                  } 
+              }
+            };
+            xmlhttp.open("POST", "http://%IP%/index", true);
+            xmlhttp.send(data);
+          }
+
+          function setCurrentTime(){
+            var messageField = document.getElementById("ctime");
+                    var message = messageField.value;
+          //      window.alert(message);
+
+            var data = new FormData();
+            data.append("CurrentTime", message);
+
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function() {
+              if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                  console.log('responseText:' + xmlhttp.responseText);
+                  try {
+                      parseJsonResponse(xmlhttp.responseText);
+                  } catch(err) {
+                      //console.log(err.message + " in " + xmlhttp.responseText);
+                      return;
+                  } 
+              }
+            };
+            xmlhttp.open("POST", "http://%IP%/index", true);
+            xmlhttp.send(data);
+          }
+
+          function parseJsonResponse(response){
+            var data = JSON.parse(response);
+                      var s;
+                      var t;
+                      document.getElementById("city").innerHTML = data.name;
+                      document.getElementById("main").innerHTML = data.weather[0].main;
+                      document.getElementById("description").innerHTML = data.weather[0].description;
+                      document.getElementById("temp").innerHTML = Math.round(data.main.temp) + " celsius";
+                      document.getElementById("humidity").innerHTML = Math.round(data.main.humidity) + " percent";
+                      document.getElementById("pressure").innerHTML = Math.round(data.main.pressure) + " hPa or " + Math.round(data.main.pressure * 0.75) + " mmHg";
+                      document.getElementById("speed").innerHTML = data.wind.speed + " m/s";
+                      document.getElementById("direction").innerHTML = data.wind.deg + " degrees";
+                      s = new Date(data.dt * 1000).toLocaleDateString("ru-RU");
+                      t = new Date(data.dt * 1000).toLocaleTimeString("ru-RU");
+                      document.getElementById("dt").innerHTML = s + " " + t;
+                      s = new Date(data.sys.sunrise * 1000).toLocaleDateString("ru-RU");
+                      t = new Date(data.sys.sunrise * 1000).toLocaleTimeString("ru-RU");
+                      document.getElementById("sunrise").innerHTML = s + " " + t;
+                      s = new Date(data.sys.sunset * 1000).toLocaleDateString("ru-RU");
+                      t = new Date(data.sys.sunset * 1000).toLocaleTimeString("ru-RU");
+                      document.getElementById("sunset").innerHTML = s + " " + t;
+                      document.getElementById("states").innerHTML = data.ledon;
+                      document.getElementById("switch_Time").innerHTML = data.swtime;
+          }
+
+          function getJsonInfo(){
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.onreadystatechange = function() {
+              if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                  console.log('responseText:' + xmlhttp.responseText);
+                  try {
+                      parseJsonResponse(xmlhttp.responseText);
+                  } catch(err) {
+                      //console.log(err.message + " in " + xmlhttp.responseText);
+                      return;
+                  } 
+              }
+            };
+            xmlhttp.open("GET", "http://%IP%/info", true);
+            xmlhttp.send();
+          }
+
+       </script>
+   </head>
+
+   <body>
+      <h1>
+         Hello from ESP32!
+      </h1>
+      <div>
+        <div>
+          <p >Actual led state: <strong id = "states"></strong></p>
+        	<p id = "switch_Time">Switch time: </p>
+          <p id = "current_Time"></p>
+          <p>
+             <p>Change led state to:</p>
+              <p>
+          			<form>
+          			   <button type="button" onclick="#" class="button" id="ledOn" name = "LedON">ON</button>
+          			   <button type="button" onclick="#" class="button button2" id="ledOff" name = "LedOff">OFF</button>
+          			</form>
+    		      </p>  
+          </p>
+       
+          <p>
+            <form id="switchTime" action="/index" method="post">
+              <label class="label">Set switch time: </label><br>
+              <input id="time" type = "Datetime-local" name = "SwitchTime"/>
+              <button type="button" onclick="#" class="button submitTime" id="switcht">Submit</button>
+            </form>
+          </p>
+        
+          <p>
+        	  <form id="currentTime" action="#" method="post">
+                <label class="label">Set current time: </label><br>
+                <input id="ctime" type = "Datetime-local" name = "CurrentTime"/>
+                <button type="button" onclick="#" class="button submitTime" id="currentt">Submit</button>
+            </form><br>
+          </p>
+        </div>
+      
+        <table id="infoTable">
+           
+           <tr><td>City: </td><td id="city">%City%</td></tr>
+           <tr><td>main: </td><td id="main">%main%</td></tr>
+           <tr><td>description: </td><td id="description">%description%</td></tr>
+           <tr><td>temp: </td><td id="temp">%temp%</td></tr>
+           <tr><td>humidity: </td><td id="humidity">%humidity%</td></tr>
+           <tr><td>pressure: </td><td id="pressure">%pressure%</td></tr>
+           <tr><td>wind's speed: </td><td id="speed">%speed%</td></tr>
+           <tr><td>wind's direction: </td><td id="direction">%direction%</td></tr>
+           <tr><td>Data updated at: </td><td id="dt">%Data_up_time%</td></tr>
+           <tr><td>Sunrise: </td><td id="sunrise">%Sunrise%</td></tr>
+           <tr><td>Sunset: </td><td id="sunset">%Sunset%</td></tr>
+           
+        </table>
+      </div>
+   </body>
+</html>
